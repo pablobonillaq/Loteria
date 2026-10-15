@@ -73,3 +73,20 @@ yarn-error.log
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# ---------- Loteria ----------
+# APK/AAB generados por generar-apk.bat (se pueden volver a generar)
+*.apk
+*.aab
+output-metadata.json
+
+# Audios de las cartas: los genera scripts/generar-audios.ps1 con la voz de Windows
+# android/app/src/main/res/raw/*.wav
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# Variables de entorno / secretos
+.env
+.env.*
