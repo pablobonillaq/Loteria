@@ -16,7 +16,11 @@ export interface Spec extends TurboModule {
    * Reproduce un audio grabado incluido en la app (android/app/src/main/res/raw/<name>.wav).
    * Se resuelve con true al terminar, o con false si ese audio no existe.
    */
-  playClip(name: string, rate: number, boostMillibels: number): Promise<boolean>;
+  playClip(
+    name: string,
+    rate: number,
+    boostMillibels: number,
+  ): Promise<boolean>;
   stop(): void;
   setMaxVolume(): void;
   setKeepScreenOn(on: boolean): void;

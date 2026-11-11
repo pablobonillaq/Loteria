@@ -46,11 +46,23 @@ function limitar(valor: number, min: number, max: number): number {
 function normalizar(datos: Partial<Ajustes>): Ajustes {
   const a = { ...AJUSTES_INICIALES, ...datos };
   return {
-    segundos: limitar(Number(a.segundos) || AJUSTES_INICIALES.segundos, LIMITES.segundos.min, LIMITES.segundos.max),
-    velocidad: limitar(Number(a.velocidad) || 1, LIMITES.velocidad.min, LIMITES.velocidad.max),
+    segundos: limitar(
+      Number(a.segundos) || AJUSTES_INICIALES.segundos,
+      LIMITES.segundos.min,
+      LIMITES.segundos.max,
+    ),
+    velocidad: limitar(
+      Number(a.velocidad) || 1,
+      LIMITES.velocidad.min,
+      LIMITES.velocidad.max,
+    ),
     decirVerso: Boolean(a.decirVerso),
     volumenMaximo: Boolean(a.volumenMaximo),
-    refuerzo: limitar(Math.round(Number(a.refuerzo) || 0), 0, NIVELES_REFUERZO.length - 1),
+    refuerzo: limitar(
+      Math.round(Number(a.refuerzo) || 0),
+      0,
+      NIVELES_REFUERZO.length - 1,
+    ),
   };
 }
 

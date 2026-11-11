@@ -6,6 +6,15 @@ App de **Lotería mexicana** para Android (teléfono y Android TV / Fire TV) que
 
 ## Funciones
 
+En el teléfono, el menú principal tiene dos modos:
+
+- **Echar cartas**: la app canta las cartas (se describe abajo).
+- **Jugar**: el teléfono es tu tabla de 4 x 4. Elige **Aleatorio** (16 cartas al azar, con opción de pedir otra tabla) o **Elegir cartas** (escoges 16 de las 54). Toca las cartas para ponerles ficha; al llenar las 16 aparece **¡Lotería!!** con las opciones *Jugar de nuevo* o *Elegir nuevas cartas*.
+
+En Android TV la app abre directo en *Echar cartas*.
+
+### Echar cartas
+
 - **Play / Pausa / Continuar**: canta cada carta y espera los segundos configurados antes de la siguiente. Al continuar después de una pausa, repite la carta actual por si alguien no la escuchó.
 - **Carta en grande**, contador `12 / 54` y barra de tiempo para la siguiente carta.
 - **Últimas 5 cartas** que salieron.
@@ -82,8 +91,14 @@ npm run android      # instala en un emulador o dispositivo conectado
 ```
 App.tsx                         Pantalla principal + modal de configuración
 src/
-  data/cartas.ts                Las 54 cartas (número, nombre, ícono, verso) y el barajado
-  screens/JuegoScreen.tsx       Juego: ciclo de cartas, Play/Pausa/Reiniciar, layout teléfono y TV
+  data/cartas.ts                Las 54 cartas (número, nombre, verso, imagen) y el barajado
+  assets/cartas/                Imágenes de las 54 cartas
+  screens/InicioScreen.tsx      Menú (móvil): Echar cartas / Jugar → Aleatorio o Elegir cartas
+  screens/JuegoScreen.tsx       Echar cartas: ciclo de cartas, Play/Pausa/Reiniciar, layout teléfono y TV
+  screens/TablaAleatoriaScreen.tsx  Tabla de 16 cartas al azar
+  screens/ElegirCartasScreen.tsx    Elegir 16 de las 54 cartas
+  screens/TableroScreen.tsx     Tabla para marcar con fichas y aviso de ¡Lotería!
+  components/TablaCartas.tsx    Cuadrícula de cartas con fichas
   screens/ConfiguracionScreen.tsx
   components/CartaVista.tsx     Dibujo de la carta
   components/Boton.tsx          Botón táctil con foco para control remoto
@@ -100,7 +115,6 @@ generar-apk.bat                 Compila el APK de principio a fin
 
 ## Notas
 
-- **Emojis**: las cartas usan emojis de Unicode 11 o anteriores, porque el Fire TV no muestra los más nuevos.
+- **Imágenes de las cartas**: están en `src/assets/cartas/` (`01_el_gallo.jpg` … `54_la_rana.jpg`), reducidas a 640 px de ancho. Las originales en alta resolución se guardan en `originales/cartas/`, que no se sube al repo.
 - **iOS**: la app abre, pero el módulo de audio solo está implementado para Android.
 - **Si no se escucha**: pon el *Refuerzo de volumen* en *Apagado* (algunos equipos no soportan el efecto) y revisa que existan los `.wav` en `android/app/src/main/res/raw/`.
-- Los dibujos de las cartas son un diseño propio con emojis; no usan las ilustraciones de la Lotería tradicional.

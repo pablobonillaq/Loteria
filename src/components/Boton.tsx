@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
-import { Platform, Pressable, StyleProp, StyleSheet, ViewStyle } from 'react-native';
+import {
+  Platform,
+  Pressable,
+  StyleProp,
+  StyleSheet,
+  ViewStyle,
+} from 'react-native';
 
 export const ES_TV = Platform.isTV;
 
@@ -17,10 +23,18 @@ interface Props {
  * Botón que funciona con toque (teléfono) y con el control remoto (Android TV):
  * cuando tiene el foco del control se marca con un borde dorado y se agranda un poco.
  */
-export function Boton({ onPress, style, disabled, focoInicial, accessibilityLabel, children }: Props) {
+export function Boton({
+  onPress,
+  style,
+  disabled,
+  focoInicial,
+  accessibilityLabel,
+  children,
+}: Props) {
   const [enfocado, setEnfocado] = useState(false);
   // `hasTVPreferredFocus` lo entiende la vista nativa de Android; se pasa sin tipar.
-  const propsTV = ES_TV && focoInicial ? ({ hasTVPreferredFocus: true } as object) : {};
+  const propsTV =
+    ES_TV && focoInicial ? ({ hasTVPreferredFocus: true } as object) : {};
 
   return (
     <Pressable
@@ -39,7 +53,8 @@ export function Boton({ onPress, style, disabled, focoInicial, accessibilityLabe
         enfocado && styles.enfocado,
         pressed && styles.presionado,
         disabled && styles.deshabilitado,
-      ]}>
+      ]}
+    >
       {children}
     </Pressable>
   );

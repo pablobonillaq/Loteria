@@ -16,7 +16,12 @@ export const Audio = {
    * Dice un texto. Si se indica `clip` y ese audio grabado existe en la app, se reproduce el audio
    * (funciona en cualquier equipo, p. ej. Fire TV). Si no, se usa la voz del sistema (TTS).
    */
-  async hablar(texto: string, velocidad: number, refuerzo: number, clip?: string): Promise<void> {
+  async hablar(
+    texto: string,
+    velocidad: number,
+    refuerzo: number,
+    clip?: string,
+  ): Promise<void> {
     if (!NativeLoteriaAudio) {
       return esperar(duracionEstimada(texto));
     }

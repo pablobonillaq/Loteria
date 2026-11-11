@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Animated,
+  BackHandler,
   DeviceEventEmitter,
   Easing,
   LayoutChangeEvent,
@@ -23,13 +24,17 @@ const ULTIMAS = 5;
 interface Props {
   ajustes: Ajustes;
   abrirConfiguracion: () => void;
+  /** Si se indica, se muestra el botón para regresar al menú (versión móvil). */
+  onSalir?: () => void;
 }
 
 function textoDeCarta(carta: Carta, ajustes: Ajustes): string {
-  return ajustes.decirVerso ? `${carta.verso}... ¡${carta.nombre}!` : carta.nombre;
+  return ajustes.decirVerso
+    ? `${carta.verso}... ¡${carta.nombre}!`
+    : carta.nombre;
 }
 
-export function JuegoScreen({ ajustes, abrirConfiguracion }: Props) {
+export function JuegoScreen({ ajustes, abrirConfiguracion, onSalir }: Props) {
   const insets = useSafeAreaInsets();
   const [estado, setEstado] = useState<Estado>('inicio');
   const [salidas, setSalidas] = useState<number[]>([]);
@@ -51,6 +56,8 @@ export function JuegoScreen({ ajustes, abrirConfiguracion }: Props) {
   // Al salir de la pantalla, detener todo.
   useEffect(() => {
     return () => {
+      // turnoRef es un contador (no un nodo): se incrementa a propósito para cancelar el ciclo.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       turnoRef.current++;
       cancelarEsperaRef.current?.();
       Audio.detener();
@@ -62,7 +69,12 @@ export function JuegoScreen({ ajustes, abrirConfiguracion }: Props) {
 
   const hablar = (texto: string, clip?: string) => {
     const a = ajustesRef.current;
-    return Audio.hablar(texto, a.velocidad, milibelesDeRefuerzo(a.refuerzo), clip);
+    return Audio.hablar(
+      texto,
+      a.velocidad,
+      milibelesDeRefuerzo(a.refuerzo),
+      clip,
+    );
   };
 
   /** Espera `ms` milisegundos; devuelve false si se canceló (pausa/reinicio). */
@@ -113,7 +125,9 @@ export function JuegoScreen({ ajustes, abrirConfiguracion }: Props) {
       }
       repetir = false;
 
-      const actual = cartaPorNumero(salidasRef.current[salidasRef.current.length - 1]);
+      const actual = cartaPorNumero(
+        salidasRef.current[salidasRef.current.length - 1],
+      );
       reiniciarBarra();
       await hablar(
         textoDeCarta(actual, ajustesRef.current),
@@ -198,16 +212,19 @@ export function JuegoScreen({ ajustes, abrirConfiguracion }: Props) {
   const accionesRef = useRef({ estado, play, pausar });
   accionesRef.current = { estado, play, pausar };
   useEffect(() => {
-    const sub = DeviceEventEmitter.addListener('loteriaTeclaMedia', (tecla: string) => {
-      const { estado: e, play: p, pausar: pa } = accionesRef.current;
-      if (tecla === 'pausa' || (tecla === 'playpausa' && e === 'cantando')) {
-        if (e === 'cantando') {
-          pa();
+    const sub = DeviceEventEmitter.addListener(
+      'loteriaTeclaMedia',
+      (tecla: string) => {
+        const { estado: e, play: p, pausar: pa } = accionesRef.current;
+        if (tecla === 'pausa' || (tecla === 'playpausa' && e === 'cantando')) {
+          if (e === 'cantando') {
+            pa();
+          }
+        } else if (e !== 'cantando' && e !== 'fin') {
+          p();
         }
-      } else if (e !== 'cantando' && e !== 'fin') {
-        p();
-      }
-    });
+      },
+    );
     return () => sub.remove();
   }, []);
 
@@ -216,15 +233,22 @@ export function JuegoScreen({ ajustes, abrirConfiguracion }: Props) {
     const { width, height } = e.nativeEvent.layout;
     setArea({ ancho: width, alto: height });
   };
-  const anchoCarta = Math.floor(Math.min(area.ancho, area.alto * PROPORCION_CARTA));
+  const anchoCarta = Math.floor(
+    Math.min(area.ancho, area.alto * PROPORCION_CARTA),
+  );
 
   const GAP = ES_TV ? 12 : 8;
-  const anchoMini = anchoFila > 0 ? Math.floor((anchoFila - GAP * (ULTIMAS - 1)) / ULTIMAS) : 0;
+  const anchoMini =
+    anchoFila > 0 ? Math.floor((anchoFila - GAP * (ULTIMAS - 1)) / ULTIMAS) : 0;
 
-  const actual = salidas.length > 0 ? cartaPorNumero(salidas[salidas.length - 1]) : null;
+  const actual =
+    salidas.length > 0 ? cartaPorNumero(salidas[salidas.length - 1]) : null;
   const anteriores = salidas.slice(0, -1).slice(-ULTIMAS).reverse(); // la más reciente primero
 
-  const anchoBarra = progreso.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] });
+  const anchoBarra = progreso.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0%', '100%'],
+  });
 
   // Un solo botón principal (no se desmonta) para que el foco del control remoto no se pierda.
   const principal =
@@ -232,11 +256,54 @@ export function JuegoScreen({ ajustes, abrirConfiguracion }: Props) {
       ? { texto: '❚❚  Pausa', accion: pausar, estilo: styles.botonPausa }
       : estado === 'fin'
       ? { texto: '⟲  Nuevo juego', accion: reiniciarJuego, estilo: null }
-      : { texto: estado === 'pausa' ? '▶  Continuar' : '▶  Play', accion: play, estilo: null };
+      : {
+          texto: estado === 'pausa' ? '▶  Continuar' : '▶  Play',
+          accion: play,
+          estilo: null,
+        };
 
   // --- Piezas de la pantalla ---
+  // --- Regresar al menú ---
+  const salir = () => {
+    if (!onSalir) {
+      return;
+    }
+    const enCurso = salidasRef.current.length > 0 && estado !== 'fin';
+    if (!enCurso) {
+      onSalir();
+      return;
+    }
+    if (estado === 'cantando') {
+      pausar();
+    }
+    Alert.alert(
+      'Salir al menú',
+      'Se perderá la partida actual. ¿Quieres salir?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Salir', style: 'destructive', onPress: onSalir },
+      ],
+    );
+  };
+  const salirRef = useRef(salir);
+  salirRef.current = salir;
+  useEffect(() => {
+    if (!onSalir) {
+      return;
+    }
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      salirRef.current();
+      return true;
+    });
+    return () => sub.remove();
+  }, [onSalir]);
+
   const botonConfig = (
-    <Boton onPress={irAConfiguracion} style={styles.botonIcono} accessibilityLabel="Configuración">
+    <Boton
+      onPress={irAConfiguracion}
+      style={styles.botonIcono}
+      accessibilityLabel="Configuración"
+    >
       <Text style={styles.botonIconoTexto}>⚙︎</Text>
     </Boton>
   );
@@ -261,16 +328,33 @@ export function JuegoScreen({ ajustes, abrirConfiguracion }: Props) {
   const ultimas = (
     <>
       <Text style={styles.subtitulo}>Últimas cartas</Text>
-      <View style={styles.filaUltimas} onLayout={e => setAnchoFila(e.nativeEvent.layout.width)}>
+      <View
+        style={styles.filaUltimas}
+        onLayout={e => setAnchoFila(e.nativeEvent.layout.width)}
+      >
         {anchoMini > 0 &&
           Array.from({ length: ULTIMAS }).map((_, i) => {
             const numero = anteriores[i];
             return (
-              <View key={i} style={{ width: anchoMini, marginLeft: i === 0 ? 0 : GAP }}>
+              <View
+                key={i}
+                style={{ width: anchoMini, marginLeft: i === 0 ? 0 : GAP }}
+              >
                 {numero ? (
-                  <CartaVista carta={cartaPorNumero(numero)} ancho={anchoMini} />
+                  <CartaVista
+                    carta={cartaPorNumero(numero)}
+                    ancho={anchoMini}
+                  />
                 ) : (
-                  <View style={[styles.hueco, { width: anchoMini, height: anchoMini / PROPORCION_CARTA }]} />
+                  <View
+                    style={[
+                      styles.hueco,
+                      {
+                        width: anchoMini,
+                        height: anchoMini / PROPORCION_CARTA,
+                      },
+                    ]}
+                  />
                 )}
               </View>
             );
@@ -281,13 +365,17 @@ export function JuegoScreen({ ajustes, abrirConfiguracion }: Props) {
 
   const controles = (
     <View style={styles.controles}>
-      <Boton onPress={confirmarReinicio} style={[styles.boton, styles.botonSecundario]}>
-        <Text style={styles.botonSecundarioTexto}>⟲  Reiniciar</Text>
+      <Boton
+        onPress={confirmarReinicio}
+        style={[styles.boton, styles.botonSecundario]}
+      >
+        <Text style={styles.botonSecundarioTexto}>⟲ Reiniciar</Text>
       </Boton>
       <Boton
         onPress={principal.accion}
         focoInicial
-        style={[styles.boton, styles.botonPrincipal, principal.estilo]}>
+        style={[styles.boton, styles.botonPrincipal, principal.estilo]}
+      >
         <Text style={styles.botonPrincipalTexto}>{principal.texto}</Text>
       </Boton>
     </View>
@@ -306,7 +394,11 @@ export function JuegoScreen({ ajustes, abrirConfiguracion }: Props) {
             </Text>
             {botonConfig}
           </View>
-          <Text style={styles.nombreActualTV} numberOfLines={1} adjustsFontSizeToFit>
+          <Text
+            style={styles.nombreActualTV}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+          >
             {actual
               ? actual.nombre
               : estado === 'inicio'
@@ -324,9 +416,23 @@ export function JuegoScreen({ ajustes, abrirConfiguracion }: Props) {
 
   // --- Teléfono: vertical ---
   return (
-    <View style={[styles.pantalla, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 12 }]}>
+    <View
+      style={[
+        styles.pantalla,
+        { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 12 },
+      ]}
+    >
       <View style={styles.encabezado}>
-        <Text style={styles.titulo}>Lotería</Text>
+        {onSalir && (
+          <Boton
+            onPress={salir}
+            style={[styles.botonIcono, styles.botonAtras]}
+            accessibilityLabel="Regresar al menú"
+          >
+            <Text style={styles.botonIconoTexto}>‹</Text>
+          </Boton>
+        )}
+        <Text style={styles.titulo}>Echar cartas</Text>
         <Text style={styles.contador}>
           {salidas.length} / {TOTAL_CARTAS}
         </Text>
@@ -385,6 +491,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#FFF8E7',
     marginRight: 12,
+  },
+  botonAtras: {
+    marginRight: 10,
   },
   botonIcono: {
     width: 44,

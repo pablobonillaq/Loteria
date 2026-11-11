@@ -8,6 +8,15 @@ A **Mexican Lotería** app for Android (phone and Android TV / Fire TV). It draw
 
 ## Features
 
+On phones, the main menu has two modes:
+
+- **Echar cartas** (call the cards): the app calls out the cards (described below).
+- **Jugar** (play): your phone becomes a 4 x 4 game board. Choose **Aleatorio** (16 random cards, with the option to get another board) or **Elegir cartas** (pick 16 of the 54). Tap cards to place a marker; when all 16 are marked, **¡Lotería!!** appears with the options *Jugar de nuevo* (play again) or *Elegir nuevas cartas* (pick new cards).
+
+On Android TV the app opens straight into *Echar cartas*.
+
+### Calling the cards
+
 - **Play / Pause / Resume**: calls each card, then waits the configured number of seconds before the next one. When you resume after a pause, it repeats the current card in case someone missed it.
 - **Large current card**, a `12 / 54` counter and a progress bar until the next card.
 - **Last 5 cards** drawn.
@@ -84,8 +93,14 @@ npm run android      # install on an emulator or connected device
 ```
 App.tsx                         Main screen + settings modal
 src/
-  data/cartas.ts                The 54 cards (number, name, icon, verse) and shuffling
-  screens/JuegoScreen.tsx       Game: card loop, Play/Pause/Restart, phone and TV layouts
+  data/cartas.ts                The 54 cards (number, name, verse, image) and shuffling
+  assets/cartas/                Images of the 54 cards
+  screens/InicioScreen.tsx      Menu (phone): Echar cartas / Jugar → Aleatorio or Elegir cartas
+  screens/JuegoScreen.tsx       Card caller: card loop, Play/Pause/Restart, phone and TV layouts
+  screens/TablaAleatoriaScreen.tsx  Random 16-card board
+  screens/ElegirCartasScreen.tsx    Pick 16 of the 54 cards
+  screens/TableroScreen.tsx     Board to mark with markers and the ¡Lotería! message
+  components/TablaCartas.tsx    Card grid with markers
   screens/ConfiguracionScreen.tsx  Settings screen
   components/CartaVista.tsx     Card drawing
   components/Boton.tsx          Touch button with remote-control focus support
@@ -102,7 +117,6 @@ generar-apk.bat                 Builds the APK end to end
 
 ## Notes
 
-- **Emojis**: cards only use Unicode 11 or older emojis, because Fire TV doesn't display newer ones.
+- **Card images**: stored in `src/assets/cartas/` (`01_el_gallo.jpg` … `54_la_rana.jpg`), resized to 640 px wide. The high-resolution originals live in `originales/cartas/`, which is not committed.
 - **iOS**: the app opens, but the audio module is only implemented for Android.
 - **No sound?** Set *Refuerzo de volumen* (volume boost) to *Apagado* (off), since some devices don't support the effect, and check that the `.wav` files exist in `android/app/src/main/res/raw/`.
-- The card artwork is an original emoji-based design; it doesn't use the traditional Lotería illustrations.

@@ -68,17 +68,18 @@ public static class LoteriaWav {
 # ---------- Textos a grabar ----------
 $abre = [string][char]0x00A1   # signo de exclamacion de apertura
 $contenido = [System.IO.File]::ReadAllText($cartasTs, [System.Text.Encoding]::UTF8)
-$patron = "numero:\s*(\d+),\s*nombre:\s*'((?:[^'\\]|\\.)*)',\s*icono:\s*'(?:[^'\\]|\\.)*',\s*verso:\s*'((?:[^'\\]|\\.)*)'"
+$patron = "numero:\s*(\d+),\s*nombre:\s*(?:'((?:[^'\\]|\\.)*)'|`"((?:[^`"\\]|\\.)*)`"),\s*(?:icono:\s*(?:'(?:[^'\\]|\\.)*'|`"(?:[^`"\\]|\\.)*`"),\s*)?verso:\s*(?:'((?:[^'\\]|\\.)*)'|`"((?:[^`"\\]|\\.)*)`")"
 $encontradas = [regex]::Matches($contenido, $patron)
 if ($encontradas.Count -ne 54) { throw "Se esperaban 54 cartas en $cartasTs y se encontraron $($encontradas.Count)" }
 
 $audios = New-Object System.Collections.ArrayList
 [void]$audios.Add(@{ Archivo = 'inicio'; Texto = "${abre}Se va y se corre!" })
 [void]$audios.Add(@{ Archivo = 'fin'; Texto = "${abre}Se acabaron las cartas!" })
+[void]$audios.Add(@{ Archivo = 'loteria'; Texto = "${abre}Loter$([char]0x00ED)a!" })
 foreach ($m in $encontradas) {
   $num = [int]$m.Groups[1].Value
-  $nombre = $m.Groups[2].Value -replace "\\'", "'"
-  $verso = $m.Groups[3].Value -replace "\\'", "'"
+  $nombre = ($m.Groups[2].Value + $m.Groups[3].Value) -replace "\\'", "'"
+  $verso = ($m.Groups[4].Value + $m.Groups[5].Value) -replace "\\'", "'"
   $nn = $num.ToString('00')
   [void]$audios.Add(@{ Archivo = "carta_$nn"; Texto = "${abre}$nombre!" })
   [void]$audios.Add(@{ Archivo = "verso_$nn"; Texto = "$verso... ${abre}$nombre!" })
